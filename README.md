@@ -1,1 +1,1 @@
-# go-checkmkapi-simple
+# go-checkmk-simple
