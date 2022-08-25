@@ -114,3 +114,15 @@ func (a account) DeleteHost(hostname string) (bool, string) {
 	}
 	return true, "ok"
 }
+
+func (a account) RenameHost(oldhostname string, newhostname string, ip string, folder string) (bool, string) {
+	request := `request={"hostnames":["`+oldhostname+`"]}`
+	action  := "delete_hosts"
+	stt1,err1 := a.makeRequest(action, request)
+	if !stt1 {
+		// fmt.Println("Loi ne")
+		log.Fatal(stt1,err1)
+		return false, err1
+	}
+	return AddHost(newhostname, ip, folder)
+}
