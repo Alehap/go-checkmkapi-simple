@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	b64 "encoding/base64"
+	// b64 "encoding/base64"
 	"encoding/json"
 )
 
@@ -29,12 +29,12 @@ func (a account) makeRequest(action string, request string) (bool,string) {
 	// fmt.Println(action + " is called.")
 	client := &http.Client{}
 	var data = strings.NewReader(request)
-	req, err := http.NewRequest("POST", a.cmkURL + "webapi.py?action="+action, data)
+	req, err := http.NewRequest("POST", a.cmkURL + "webapi.py?_username="+a.user+"&_secret="+a.secret+"&action="+action, data)
 	if err != nil {
 		log.Fatal(err)
 		return false, err.Error()
 	}
-	req.Header.Set("Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(a.user+":"+a.secret)))
+	// req.Header.Set("Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(a.user+":"+a.secret)))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err1 := client.Do(req)
 	if err1 != nil {
@@ -124,5 +124,5 @@ func (a account) RenameHost(oldhostname string, newhostname string, ip string, f
 		log.Fatal(stt1,err1)
 		return false, err1
 	}
-	return AddHost(newhostname, ip, folder)
+	return a.AddHost(newhostname, ip, folder)
 }
