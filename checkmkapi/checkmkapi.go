@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"strconv"
+	// "time"
 	// b64 "encoding/base64"
 	"encoding/json"
 )
@@ -25,6 +27,42 @@ func New(cmkURL string, user string, secret string) account {
 	a := account {user: user, secret: secret, cmkURL: cmkURL}
     return a
 }
+
+func (a account) httpRequest(endpoint string, request string) (bool,[][]interface{}) {
+	// fmt.Println(request)
+	client := &http.Client{}
+	var data = strings.NewReader(request)
+	req, err := http.NewRequest("POST", a.cmkURL + endpoint + ".py?_username="+a.user+"&_secret="+a.secret, data)
+	if err != nil {
+		log.Fatal(err)
+		return false, nil
+	}
+	// req.Header.Set("Authorization", "Basic "+b64.StdEncoding.EncodeToString([]byte(a.user+":"+a.secret)))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err1 := client.Do(req)
+	if err1 != nil {
+		log.Fatal(err1)
+		return false, nil
+	}
+	defer resp.Body.Close()
+	bodyText, err2 := ioutil.ReadAll(resp.Body)
+	if err2 != nil {
+		log.Fatal(err2)
+		return false, nil
+	}
+	// fmt.Printf("%s\n", bodyText)
+	byt := []byte(bodyText)
+	var obj [][]interface{}
+	err3 := json.Unmarshal(byt, &obj);
+	if err3 != nil {
+        log.Fatal("Parse json err: ")
+        log.Fatal(err3.Error())
+        return false, nil
+    }
+    // fmt.Println(obj[1][32])
+	return true, obj
+}
+
 func (a account) makeRequest(action string, request string) (bool,string) {
 	// fmt.Println(action + " is called.")
 	client := &http.Client{}
@@ -56,15 +94,8 @@ func (a account) makeRequest(action string, request string) (bool,string) {
         log.Fatal(err3)
         return false, err3.Error()
     }
-    // fmt.Println("check result_code...")
-    if int(obj["result_code"].(float64)) != 0 {
-    	log.Fatal(obj["result"])
-    	return false, obj["result"].(string)
-    }
-
-    // fmt.Println("makeRequest OK.")
-
-	return true, "ok"
+    // fmt.Println(obj)
+    return true, "ok"
 }
 
 func (a account) discoveryServices(hostname string) (bool, string) {
@@ -125,4 +156,17 @@ func (a account) RenameHost(oldhostname string, newhostname string, ip string, f
 		return false, err1
 	}
 	return a.AddHost(newhostname, ip, folder)
+}
+
+func (a account) GetAvgNetworkByHostname(hostname string) (float64, float64) {
+	request := `host=`+hostname+`&service=Interface+2&view_name=service&output_format=json`
+	stt1,data := a.httpRequest("view", request)
+	if !stt1 {
+		// fmt.Println("Loi ne")
+		// log.Fatal(stt1,err1)
+		return 0.0, 0.0
+	}
+	lastIn, _ := strconv.ParseFloat(strings.Split(strings.Split(data[1][32].(string),";")[4],"=")[1], 64)
+	lastOut, _ := strconv.ParseFloat(strings.Split(strings.Split(data[1][32].(string),";")[8],"=")[1], 64)
+ 	return lastIn*8, lastOut*8
 }
