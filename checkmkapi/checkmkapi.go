@@ -170,3 +170,16 @@ func (a account) GetAvgNetworkByHostname(hostname string) (float64, float64) {
 	lastOut, _ := strconv.ParseFloat(strings.Split(strings.Split(data[1][32].(string),";")[8],"=")[1], 64)
  	return lastIn*8, lastOut*8
 }
+
+func (a account) GetCPUUtilByHostname(hostname string) (float64) {
+	request := `host=`+hostname+`&service=CPU+utilization&view_name=service&output_format=json`
+	stt1,data := a.httpRequest("view", request)
+	if !stt1 {
+		// fmt.Println("Loi ne")
+		// log.Fatal(stt1,data)
+		return 0.0
+	}
+	// fmt.Println(data[1][32])
+	cpu, _ := strconv.ParseFloat(strings.Split(strings.Split(data[1][32].(string),";")[12],"=")[1], 64)
+ 	return cpu
+}
